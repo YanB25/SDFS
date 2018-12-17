@@ -149,7 +149,8 @@ class Connector():
         if all:
             error, msg = namenode_conn.root.fresh_update()
             if error == 0:
-                print('\tfilename\tblock\tvalid/replica')
+                fmt = '\t{:<30}{:<10}{}/{}'
+                print(fmt.format('filename', 'block', 'valid', 'replica'))
                 for filename in msg:
                     sums = 0
                     valid = 0
@@ -157,8 +158,8 @@ class Connector():
                         replica_list = msg[filename][blkid]
                         valid += sum([1 if item['healthy'] else 0 for item in replica_list])
                         sums += len(replica_list)
-                    print('\t{}\t{}\t{}/{}'.format(filename, len(msg[filename]), valid, sums))
-                print('run python sdfs.py autofix to fix the error replica')
+                    print(fmt.format(filename, len(msg[filename]), valid, sums))
+                print('run python sdfs.py autofix to fix the error replica if valid != replica')
                 return True, 'success'
             else:
                 return False, 'error'
@@ -166,9 +167,10 @@ class Connector():
             errno, config = namenode_conn.root.ls()
             if errno == 1:
                 return False, 'error'
-            print('\tfilename\tblock')
+            fmt='\t{:<30}{:<10}'
+            print(fmt.format('filename', 'block'))
             for file_info in config:
-                print('\t{}\t{}'.format(file_info['filename'], file_info['replica']))
+                print(fmt.format(file_info['filename'], file_info['replica']))
             return True, 'success'
     def node(self):
         namenode_conn = rpyc.connect(self.ip, self.port)

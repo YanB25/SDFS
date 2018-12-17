@@ -32,10 +32,25 @@ class NameNodeService(rpyc.Service):
             pickle.dump(self.tracking, f)
             f.close()
 
+            
+
     def on_connect(self, conn):
         print('OPEN - {}'.format(conn))
+        self.conns = []
+        self.datanodes = []
+        datanode_candidate = rpyc.discover('DATANODE')
+        for node in datanode_candidate:
+            ip, port = node
+            try:
+                conn = rpyc.connect(ip, port)
+                self.conns.append(conn)
+                self.datanodes.append((ip, port))
+            except:
+                pass
     def on_disconnect(self, conn):
         print('COLSE - {}'.format(conn))
+        for conn in self.conns:
+            conn.close()
     def exposed_put(self, filename, filesize, replica=3, blocksize=1024):
         '''
         NameNode回应存放文件的方式
@@ -51,7 +66,7 @@ class NameNodeService(rpyc.Service):
             第一维度是block对应的一系列namenode。第二维度是这些namenode的ip和port。
         '''
         ret = []
-        datanodes = rpyc.discover('DATANODE')
+        datanodes = self.datanodes
         if len(datanodes) < replica:
             return 1, []
         segments = math.ceil(filesize / blocksize)
@@ -181,7 +196,7 @@ class NameNodeService(rpyc.Service):
         self.new_tracking = {}
         self.checking = {}
 
-        datanodes = rpyc.discover('DATANODE')
+        datanodes = self.datanodes
         for filename in self.tracking:
             for blockid in self.tracking[filename]:
                 datanodes = self.tracking[filename][blockid]
@@ -233,7 +248,7 @@ class NameNodeService(rpyc.Service):
         self.__store_tracking()
         return 0, self.tracking
     def exposed_ping_all(self):
-        datanodes = rpyc.discover('DATANODE')
+        datanodes = self.datanodes
         ups = []
         downs = []
         for datanode in datanodes:
