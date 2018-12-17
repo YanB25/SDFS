@@ -1,7 +1,5 @@
 import rpyc
 import os
-print(rpyc.__version__)
-# conn = rpyc.connect('localhost', 20001)
 
 class Connector():
     def __init__(self, ip=None, port=None):
@@ -27,14 +25,16 @@ class Connector():
             NameNode统计结果。
         @param filename :: Str, 上传的文件名
 
-        @ret Boolean, 是否成功
+        @ret Tuple(Boolean, Str), 是否成功，提示信息
         '''
         with open(filename, 'rb') as f:
             binary = f.read()
             size = len(binary)
             namenode_conn = rpyc.connect(self.ip, self.port)
             blk_sz = 16384
-            datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz)
+            errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz)
+            if errno == 1:
+                return False, 'Not enough DataNode for replica'
 
             # 告知namenode，并对datanode作IO
             for idx, segment in enumerate(datanodes):
@@ -47,9 +47,9 @@ class Connector():
                     conn = rpyc.connect(ip, port)
                     # 将该块传给datanode
                     namenode_conn.root.put_block_registry(filename, idx, datanode)
-                    success, msg = conn.root.put_block(filename, idx, write_binary)
-                    if not success:
-                        return False, msg
+                    errno, msg = conn.root.put_block(filename, idx, write_binary)
+                    if errno == 1:
+                        print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
         return True
     def get(self, filename, dst_filename=None):
         if dst_filename is None:
@@ -76,5 +76,5 @@ class Connector():
 
 if __name__ == '__main__':
     connector = Connector()
-    print(connector.put('connector.py'))
-    print(connector.get('connector.py', 'canuseeme'))
+    print(connector.put('data-Trie.png'))
+    print(connector.get('data-Trie.png', 'data-Trie3.png'))
