@@ -48,6 +48,10 @@ class Dispatcher:
             for up_host in msg['down']:
                 ip, port = up_host
                 print(fmt.format(ip, port, 'DOWN'))
+        if self.args.which == 'cat':
+            success, msg = self.conn.cat(self.args.file)
+            print(msg)
+
 
 
 

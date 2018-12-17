@@ -53,6 +53,35 @@ class Connector():
                     if errno == 1:
                         print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
         return True, 'success'
+    def cat(self, filename):
+        '''
+        根据文件名获得文件块
+        @param filename
+        '''
+        namenode_conn = rpyc.connect(self.ip, self.port)
+        errno, datanodes = namenode_conn.root.get(filename)
+        if errno == 1:
+            return False, 'No file {} found'.format(filename)
+        if errno == 2:
+            return False, 'Could not find enough healthy replica.\nuse python sdfs.py rm {} to remove this file'.format(filename)
+        if errno == 3:
+            return False, 'Not enough good replica left. \nuse python sdfs.py rm {} to remove this file'.format(filename)
+        
+        file = b''
+        for blockid, datanode in enumerate(datanodes):
+            ip, port = datanode
+            conn = rpyc.connect(ip, port)
+            errno, binary = conn.root.get_block(filename, blockid)
+            if errno == 1:
+                return False, 'Unknown error when getting file {}, block not exists. Abort'.format(filename)
+            file += binary
+        try:
+            output = file.decode('ascii')
+            print(output)
+        except:
+            print(file)
+        return True, 'success'
+
     def get(self, filename, dst_filename=None, force=False):
         '''
         根据文件名获得文件块
