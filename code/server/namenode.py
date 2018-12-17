@@ -51,7 +51,7 @@ class NameNodeService(rpyc.Service):
         ret = []
         datanodes = rpyc.discover('DATANODE')
         if len(datanodes) < replica:
-            return 1: []
+            return 1, []
         segments = math.ceil(filesize / blocksize)
         available_idx = [i for i in range(len(datanodes))]
         for sec in range(segments):
