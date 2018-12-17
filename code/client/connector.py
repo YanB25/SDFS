@@ -1,5 +1,6 @@
 import rpyc
 import os
+import traceback
 
 class Connector():
     def __init__(self, ip=None, port=None):
@@ -78,6 +79,45 @@ class Connector():
         with open(dst_filename, 'wb') as f:
             f.write(file)
         return True, 'success'
+    def rm(self, filename):
+        '''
+        根据文件名删除文件
+        @param filename :: Str
+        @ret Boolean, Str
+        '''
+        namenode_conn = rpyc.connect(self.ip, self.port)
+        errno, config_file = namenode_conn.root.ownfile(filename)
+        if errno == 1:
+            return False, 'No file {} found'.format(filename)
+        # print(config_file)
+        for blockid in config_file:
+            datanodes = config_file[blockid]
+            for datanode in datanodes:
+                ip, port = datanode
+                try:
+                    conn = rpyc.connect(ip, port)
+                    errno = conn.root.rm_block(filename, blockid)
+                    if errno == 1:
+                        print('WARNING, {} block {} not found at {}:{}'.format(filename, blockid, ip, port))
+                except:
+                    print('node {}:{} temporary disconnect'.format(ip, port))
+                    traceback.print_exc()
+        return True, 'success'
+    
+    def ls(self):
+        '''
+        列出存储着的文件
+        '''
+        namenode_conn = rpyc.connect(self.ip, self.port)
+        errno, config = namenode_conn.root.ls()
+        if errno == 1:
+            return False, 'error'
+        print('\tfilename\treplica')
+        for file_info in config:
+            print('\t{}\t{}'.format(file_info['filename'], file_info['replica']))
+        return True, 'success'
+            
+
 
 if __name__ == '__main__':
     connector = Connector()

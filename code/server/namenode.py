@@ -120,6 +120,30 @@ class NameNodeService(rpyc.Service):
                 return 2, []
 
         return 0, ret_config
+    def exposed_ownfile(self, filename):
+        '''
+        返回拥有这些文件DataNode
+        @param filename:: Str
+        @ret Tuple(Int, [[(Str, Int)]]) 一系列地址
+        '''
+        self.__load_tracking()
+        if not self.tracking.get(filename):
+            return 1, []
+        config_file = self.tracking[filename]
+        return 0, config_file
+    def exposed_ls(self):
+        '''
+        @ret Int, {}
+        '''
+        self.__load_tracking()
+        ret = []
+        for filename in self.tracking:        
+            ret.append({
+                'filename': filename,
+                'replica': len(self.tracking[filename])
+            })
+        return 0, ret
+
 
 
 

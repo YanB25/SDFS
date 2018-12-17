@@ -16,7 +16,7 @@ class Dispatcher:
         if self.args.which == 'put':
             success, msg = self.conn.put(self.args.file)
             if not success:
-                self.args.print_help()
+                self.parser.print_help()
             print(msg)
         if self.args.which == 'get':
             if self.args.dst == '':
@@ -24,9 +24,19 @@ class Dispatcher:
             else:
                 success, msg = self.conn.get(self.args.file, self.args.dst)
             if not success:
-                self.args.print_help()
+                self.parser.print_help()
             print(msg)
         # if self.args.which == 'ls':
+        if self.args.which == 'rm':
+            success, msg = self.conn.rm(self.args.file)
+            print(msg)
+            if not success:
+                self.parser.print_help()
+        if self.args.which == 'ls':
+            success, msg = self.conn.ls()
+            print(msg)
+            if not success:
+                self.parser.print_help()
 
 def main():
     dispatcher = Dispatcher()

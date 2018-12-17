@@ -21,8 +21,6 @@ get_parser.add_argument('file', type=str, help='the file you want to get')
 get_parser.add_argument('dst', type=str, nargs='?', help='destination path where download to', default='')
 get_parser.set_defaults(which='get')
 
-
-
 cat_parser = subparsers.add_parser('cat', help='concatenate files and print on the standard output')
 cat_parser.add_argument('file', type=str, help='file to be cancatenated or printed')
 cat_parser.set_defaults(which='cat')
@@ -39,6 +37,9 @@ rm_parser = subparsers.add_parser('rm', help='remove files or directories',
     parents=[recursive_parent_parser])
 rm_parser.add_argument('file', help='path to be removed')
 rm_parser.set_defaults(which='rm')
+
+ls_parser = subparsers.add_parser('ls', help='list all the file uploaded')
+ls_parser.set_defaults(which='ls')
 
 # if len(sys.argv[1:]) == 0:
 #     parser.print_help()
