@@ -102,6 +102,9 @@ class Connector():
                 except:
                     print('node {}:{} temporary disconnect'.format(ip, port))
                     traceback.print_exc()
+        errno = namenode_conn.root.rm_register(filename)
+        if errno == 1:
+            print('WARNING: {} not found'.format(filename))
         return True, 'success'
     
     def ls(self):

@@ -143,6 +143,19 @@ class NameNodeService(rpyc.Service):
                 'replica': len(self.tracking[filename])
             })
         return 0, ret
+    def exposed_rm_register(self, filename):
+        self.__load_tracking()
+        if not self.tracking.get(filename):
+            return 1
+            
+        # def removekey(d, key):
+        #     r = dict(d)
+        #     del r[key]
+        #     return r
+        # self.tracking = removekey(self.tracking, filename)
+        self.tracking = {key: self.tracking[key] for key in self.tracking if key != filename}
+        self.__store_tracking()
+        return 0
 
 
 
