@@ -13,7 +13,7 @@ class Connector():
             assert(ip is not None and port is not None)
             self.ip = ip
             self.port = port
-    def put(self, filename):
+    def put(self, filename, blk_sz=16384, replica=3):
         '''
         将文件上传到DataNode。
         @detail
@@ -24,6 +24,8 @@ class Connector():
             注意，在做put_block之前，要先调用NameNode的put_block_register,以便
             NameNode统计结果。
         @param filename :: Str, 上传的文件名
+        @param blk_sz(Optional) :: Int, 块大小
+        @param replica(Optional) :: Int, 副本个数
 
         @ret Tuple(Boolean, Str), 是否成功，提示信息
         '''
@@ -31,8 +33,7 @@ class Connector():
             binary = f.read()
             size = len(binary)
             namenode_conn = rpyc.connect(self.ip, self.port)
-            blk_sz = 16384
-            errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz)
+            errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz, replica=replica)
             if errno == 1:
                 return False, 'Not enough DataNode for replica'
 
