@@ -1,0 +1,30 @@
+{
+    "nodes": [
+        {
+            "ip": "localhost",
+            "port": 20000,
+            "role": "NameNode"
+        },
+        {
+            "ip": "localhost",
+            "port": 20001,
+            "role": "DataNode"
+        },
+        {
+            "ip": "localhost",
+            "port": 20002,
+            "role": "DataNode"
+        },
+        {
+            "ip": "localhost",
+            "port": 20003,
+            "role": "DataNode"
+        },
+
+        {
+            "ip": "localhost",
+            "port": 20004,
+            "role": "DataNode"
+        }
+    ]
+}
