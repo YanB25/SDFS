@@ -93,7 +93,8 @@ class Connector():
         for blockid in config_file:
             datanodes = config_file[blockid]
             for datanode in datanodes:
-                ip, port = datanode
+                ip = datanode['ip']
+                port = datanode['port']
                 try:
                     conn = rpyc.connect(ip, port)
                     errno = conn.root.rm_block(filename, blockid)

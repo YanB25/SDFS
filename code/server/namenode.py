@@ -82,12 +82,24 @@ class NameNodeService(rpyc.Service):
 
         if self.tracking.get(filename):
             if self.tracking[filename].get(partid):
-                self.tracking[filename][partid].append(datanode)
+                self.tracking[filename][partid].append({
+                    'ip': datanode[0],
+                    'port': datanode[1],
+                    'healthy': True
+                })
             else:
-                self.tracking[filename][partid] = [datanode]
+                self.tracking[filename][partid] = [{
+                    'ip': datanode[0],
+                    'port': datanode[1],
+                    'healthy': True
+                }]
         else:
             self.tracking[filename] = {
-                partid: [datanode]
+                partid: [{
+                    'ip': datanode[0],
+                    'port': datanode[1],
+                    'healthy': True
+                }]
             }
         print(self.tracking)
         self.__store_tracking()
@@ -109,11 +121,12 @@ class NameNodeService(rpyc.Service):
             datanodes = file_config[blockid]
             hasNode = False
             for datanode in datanodes:
-                ip, port = datanode
+                ip = datanode['ip']
+                port = datanode['port']
                 try:
                     conn = rpyc.connect(ip, port)
                     conn.close()
-                    ret_config.append(datanode)
+                    ret_config.append((ip, port))
                     hasNode = True
                     break
                 except:
