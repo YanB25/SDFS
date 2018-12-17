@@ -41,18 +41,24 @@ class NameNodeService(rpyc.Service):
         @param filesize :: Int 文件字节数
         @param replica :: Int, 每个块的副本数
         @param blocksize :: Int, 每个块的大小
-        @ret [[Tuple(Str, Int)]], 第一维度是block对应的一系列namenode。第二维度是这些namenode的ip和port。
+        @ret Int, [[Tuple(Str, Int)]], 
+            第一个参数是错误码
+                - 0: no error
+                - 1: not enough DataNode
+        
+            第一维度是block对应的一系列namenode。第二维度是这些namenode的ip和port。
         '''
         ret = []
         datanodes = rpyc.discover('DATANODE')
-        assert(len(datanodes) >= replica)
+        if len(datanodes) < replica:
+            return 1: []
         segments = math.ceil(filesize / blocksize)
         available_idx = [i for i in range(len(datanodes))]
         for sec in range(segments):
             random.shuffle(available_idx)
             chosen_idx = available_idx[:replica]
             ret.append([datanodes[i] for i in chosen_idx])
-        return ret
+        return 0, ret
     def __load_tracking(self):
         f = open(self.storage_tracking, 'rb')
         self.tracking = pickle.load(f)
@@ -68,7 +74,7 @@ class NameNodeService(rpyc.Service):
         @param partid :: Int, 第partid块
         @param datanode :: Tuple(Str, Int), datanode的address
 
-        @ret Boolean, whether succeed
+        @ret Int, whether succeed
         '''
         self.__load_tracking()
 
@@ -84,7 +90,7 @@ class NameNodeService(rpyc.Service):
         print(self.tracking)
         self.__store_tracking()
 
-        return True
+        return 0
     def exposed_get(self, filename):
         '''
         @ret Int, List[Tuple(Str, Int)], 第一个返回值是错误码，无错误返回0.
