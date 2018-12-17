@@ -109,6 +109,8 @@ class NameNodeService(rpyc.Service):
         '''
         @ret Int, List[Tuple(Str, Int)], 第一个返回值是错误码，无错误返回0.
             第二个返回值是DataNode的列表。
+            - 0: noerror
+            - 3: not enough good replica
         '''
         self.__load_tracking()
 
@@ -123,6 +125,10 @@ class NameNodeService(rpyc.Service):
             for datanode in datanodes:
                 ip = datanode['ip']
                 port = datanode['port']
+                healthy = datanode['healthy']
+                if not healthy:
+                    print('not healthy')
+                    continue
                 try:
                     conn = rpyc.connect(ip, port)
                     conn.close()
@@ -133,6 +139,8 @@ class NameNodeService(rpyc.Service):
                     print('{}-{} not exist, continue')
             if not hasNode:
                 return 2, []
+        if len(ret_config) != len(self.tracking[filename]):
+            return 3, []
 
         return 0, ret_config
     def exposed_ownfile(self, filename):
@@ -166,44 +174,80 @@ class NameNodeService(rpyc.Service):
         self.tracking = {key: self.tracking[key] for key in self.tracking if key != filename}
         self.__store_tracking()
         return 0
-    # def exposed_fresh_update(self):
-    #     #TODO:
-    #     self.__load_tracking()
+    def exposed_fresh_update(self):
+        #TODO:
+        self.__load_tracking()
 
-    #     self.new_tracking = {}
-    #     self.checking = {}
+        self.new_tracking = {}
+        self.checking = {}
 
-    #     datanodes = rpyc.discover('DATANODE')
-    #     for filename in self.tracking:
-    #         for blockid, datanode in enumerate(self.tracking[filename]):
-    #             ip, port = datanode
-    #             try:
-    #                 conn = rpyc.connect(ip, port)
-    #                 errno, binary = conn.root.checkblock(filename, block)
-    #                 if not self.checking.get((filename, blockid)):
-    #                     self.checking[(filename, blockid)] = [(binary, ip, port)]
-    #                 else:
-    #                     self.checking[(filename, blockid)].append((binary, ip, port))
-    #             except:
-    #                 traceback.print_exc()
-    #     for key, binary_ip_port_list in self.checking.items():
-    #         filename, blockid = key
-    #         binary_list = [item[0] for item in binary_ip_port_list]
-    #         val, cnt = NameNodeService.count(binary_list)
-    #         idx = NameNodeService.uargmax(cnt)
-    #         #TODO:
-    #         correct_binary = binary_list[idx]
-    #         for binary, ip, port in binary_ip_port_list:
-    #             if binary == correct_binary:
-    #                 self.add_track(filename, blockid, ip, port)
-    
-    # def add_track(self, filename, blockid, ip, port):
-    #     if not self.tracking.get(filename):
-    #         self.tracking[filename] = [[] for i in range(blockid + 1)]
-    #         self.tracking[filename][blockid] = [(ip, port)]
-    #     else:
-    #         self.tracking[filename][]
+        datanodes = rpyc.discover('DATANODE')
+        for filename in self.tracking:
+            for blockid in self.tracking[filename]:
+                datanodes = self.tracking[filename][blockid]
+                for datanode in datanodes:
+                    ip = datanode['ip']
+                    port = datanode['port']
+                    try:
+                        conn = rpyc.connect(ip, port)
+                        errno, binary = conn.root.get_block(filename, blockid)
+                        if not self.checking.get((filename, blockid)):
+                            self.checking[(filename, blockid)] = [{
+                                'binary': binary,
+                                'ip': ip,
+                                'port': port
+                            }]
+                        else:
+                            self.checking[(filename, blockid)].append({
+                                'binary': binary,
+                                'ip': ip,
+                                'port': port
+                            })
+                    except:
+                        traceback.print_exc()
+        print('checking:', self.checking)
+        for key, vals in self.checking.items():
+            filename, blockid = key
 
+            binary_list = [item['binary'] for item in vals]
+            print('binary_list', binary_list)
+
+            val, cnt = NameNodeService.count(binary_list)
+            idx = NameNodeService.uargmax(cnt)
+            correct_binary = binary_list[idx]
+            for item in vals:
+                b = item['binary']
+                ip = item['ip']
+                port = item['port']
+                if b != correct_binary:
+                    try:
+                        idx = self.tracking[filename][blockid].index({
+                            'ip': ip,
+                            'port': port,
+                            'healthy': True
+                        })
+                        self.tracking[filename][blockid][idx]['healthy'] = False
+                    except:
+                        traceback.print_exc()
+        print(self.tracking)
+        self.__store_tracking()
+        return 0, self.tracking
+    def exposed_ping_all(self):
+        datanodes = rpyc.discover('DATANODE')
+        ups = []
+        downs = []
+        for datanode in datanodes:
+            ip, port = datanode
+            try:
+                conn = rpyc.connect(ip, port)
+                conn.close()
+                ups.append((ip, port))
+            except:
+                downs.append((ip, port))
+        return 0, {
+            'up': ups,
+            'down': downs
+        }
 
     @staticmethod
     def count(ls):

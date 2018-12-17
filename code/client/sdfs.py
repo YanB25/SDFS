@@ -20,12 +20,13 @@ class Dispatcher:
             print(msg)
         if self.args.which == 'get':
             if self.args.dst == '':
-                success, msg = self.conn.get(self.args.file)
+                success, msg = self.conn.get(self.args.file, force=self.args.force)
             else:
-                success, msg = self.conn.get(self.args.file, self.args.dst)
-            if not success:
-                self.parser.print_help()
+                success, msg = self.conn.get(self.args.file, self.args.dst, force=self.args.force)
             print(msg)
+            if not success:
+                # self.parser.print_help()
+                pass
         # if self.args.which == 'ls':
         if self.args.which == 'rm':
             success, msg = self.conn.rm(self.args.file)
@@ -37,6 +38,18 @@ class Dispatcher:
             print(msg)
             if not success:
                 self.parser.print_help()
+        if self.args.which == 'node':
+            success, msg = self.conn.node()
+            fmt = '\t{:<20}{:<10}{:<4}'
+            print(fmt.format('ip', 'port', 'status'))
+            for up_host in msg['up']:
+                ip, port = up_host
+                print(fmt.format(ip, port, 'UP'))
+            for up_host in msg['down']:
+                ip, port = up_host
+                print(fmt.format(ip, port, 'DOWN'))
+
+
 
 def main():
     dispatcher = Dispatcher()

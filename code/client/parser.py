@@ -19,6 +19,7 @@ put_parser.set_defaults(which='put')
 get_parser = subparsers.add_parser('get', help='get a file from SDFS')
 get_parser.add_argument('file', type=str, help='the file you want to get')
 get_parser.add_argument('dst', type=str, nargs='?', help='destination path where download to', default='')
+get_parser.add_argument('-f', '--force', action='store_true')
 get_parser.set_defaults(which='get')
 
 cat_parser = subparsers.add_parser('cat', help='concatenate files and print on the standard output')
@@ -41,6 +42,9 @@ rm_parser.set_defaults(which='rm')
 ls_parser = subparsers.add_parser('ls', help='list all the file uploaded')
 ls_parser.add_argument('-a', '--all', action='store_true')
 ls_parser.set_defaults(which='ls')
+
+node_parser = subparsers.add_parser('node', help='get nodes status')
+node_parser.set_defaults(which='node')
 
 # if len(sys.argv[1:]) == 0:
 #     parser.print_help()
