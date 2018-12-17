@@ -1,6 +1,6 @@
 '''
 TODO: 有个问题，多线程同时读、写self.storage_track文件，要加锁。
-TODO: 改一下众多函数的返回值
+TODO: put有时会返回掉线的peer，怎么办呢
 '''
 import rpyc
 import sys

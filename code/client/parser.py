@@ -14,8 +14,14 @@ recursive_parent_parser.add_argument('-r', '--recursive', help='operate recursiv
 
 put_parser = subparsers.add_parser('put', help='put a file into SDFS')
 put_parser.add_argument('file', type=str, help='the file you want to upload')
-put_parser.add_argument('dst', type=str, nargs='?', help='destination path where the file located, default to "/"', default='/')
 put_parser.set_defaults(which='put')
+
+get_parser = subparsers.add_parser('get', help='get a file from SDFS')
+get_parser.add_argument('file', type=str, help='the file you want to get')
+get_parser.add_argument('dst', type=str, nargs='?', help='destination path where download to', default='')
+get_parser.set_defaults(which='get')
+
+
 
 cat_parser = subparsers.add_parser('cat', help='concatenate files and print on the standard output')
 cat_parser.add_argument('file', type=str, help='file to be cancatenated or printed')
@@ -34,8 +40,8 @@ rm_parser = subparsers.add_parser('rm', help='remove files or directories',
 rm_parser.add_argument('file', help='path to be removed')
 rm_parser.set_defaults(which='rm')
 
-if len(sys.argv[1:]) == 0:
-    parser.print_help()
-args = parser.parse_args()
-print()
-print(args)
+# if len(sys.argv[1:]) == 0:
+#     parser.print_help()
+# args = parser.parse_args()
+# print()
+# print(args)

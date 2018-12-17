@@ -51,8 +51,12 @@ class Connector():
                     errno, msg = conn.root.put_block(filename, idx, write_binary)
                     if errno == 1:
                         print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
-        return True
+        return True, 'success'
     def get(self, filename, dst_filename=None):
+        '''
+        根据文件名获得文件块
+        @param filename
+        '''
         if dst_filename is None:
             dst_filename = filename
         if os.path.exists(dst_filename):
@@ -77,5 +81,5 @@ class Connector():
 
 if __name__ == '__main__':
     connector = Connector()
-    print(connector.put('data-Trie.png'))
+    # print(connector.put('data-Trie.png'))
     print(connector.get('data-Trie.png', 'data-Trie3.png'))
