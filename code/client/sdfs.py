@@ -33,7 +33,7 @@ class Dispatcher:
             if not success:
                 self.parser.print_help()
         if self.args.which == 'ls':
-            success, msg = self.conn.ls()
+            success, msg = self.conn.ls(all=self.args.all)
             print(msg)
             if not success:
                 self.parser.print_help()

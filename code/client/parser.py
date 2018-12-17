@@ -39,6 +39,7 @@ rm_parser.add_argument('file', help='path to be removed')
 rm_parser.set_defaults(which='rm')
 
 ls_parser = subparsers.add_parser('ls', help='list all the file uploaded')
+ls_parser.add_argument('-a', '--all', action='store_true')
 ls_parser.set_defaults(which='ls')
 
 # if len(sys.argv[1:]) == 0:

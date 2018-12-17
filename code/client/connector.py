@@ -107,18 +107,21 @@ class Connector():
             print('WARNING: {} not found'.format(filename))
         return True, 'success'
     
-    def ls(self):
+    def ls(self, all=False):
         '''
         列出存储着的文件
         '''
         namenode_conn = rpyc.connect(self.ip, self.port)
-        errno, config = namenode_conn.root.ls()
-        if errno == 1:
-            return False, 'error'
-        print('\tfilename\treplica')
-        for file_info in config:
-            print('\t{}\t{}'.format(file_info['filename'], file_info['replica']))
-        return True, 'success'
+        if all:
+            namenode_conn.root.fresh_update()
+        else:
+            errno, config = namenode_conn.root.ls()
+            if errno == 1:
+                return False, 'error'
+            print('\tfilename\treplica')
+            for file_info in config:
+                print('\t{}\t{}'.format(file_info['filename'], file_info['replica']))
+            return True, 'success'
             
 
 

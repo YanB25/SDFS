@@ -2,6 +2,8 @@
 TODO: 有个问题，多线程同时读、写self.storage_track文件，要加锁。
 TODO: put有时会返回掉线的peer，怎么办呢
 '''
+import traceback
+import copy
 import rpyc
 import sys
 import os
@@ -148,14 +150,76 @@ class NameNodeService(rpyc.Service):
         if not self.tracking.get(filename):
             return 1
             
-        # def removekey(d, key):
-        #     r = dict(d)
-        #     del r[key]
-        #     return r
-        # self.tracking = removekey(self.tracking, filename)
         self.tracking = {key: self.tracking[key] for key in self.tracking if key != filename}
         self.__store_tracking()
         return 0
+    # def exposed_fresh_update(self):
+    #     #TODO:
+    #     self.__load_tracking()
+
+    #     self.new_tracking = {}
+    #     self.checking = {}
+
+    #     datanodes = rpyc.discover('DATANODE')
+    #     for filename in self.tracking:
+    #         for blockid, datanode in enumerate(self.tracking[filename]):
+    #             ip, port = datanode
+    #             try:
+    #                 conn = rpyc.connect(ip, port)
+    #                 errno, binary = conn.root.checkblock(filename, block)
+    #                 if not self.checking.get((filename, blockid)):
+    #                     self.checking[(filename, blockid)] = [(binary, ip, port)]
+    #                 else:
+    #                     self.checking[(filename, blockid)].append((binary, ip, port))
+    #             except:
+    #                 traceback.print_exc()
+    #     for key, binary_ip_port_list in self.checking.items():
+    #         filename, blockid = key
+    #         binary_list = [item[0] for item in binary_ip_port_list]
+    #         val, cnt = NameNodeService.count(binary_list)
+    #         idx = NameNodeService.uargmax(cnt)
+    #         #TODO:
+    #         correct_binary = binary_list[idx]
+    #         for binary, ip, port in binary_ip_port_list:
+    #             if binary == correct_binary:
+    #                 self.add_track(filename, blockid, ip, port)
+    
+    # def add_track(self, filename, blockid, ip, port):
+    #     if not self.tracking.get(filename):
+    #         self.tracking[filename] = [[] for i in range(blockid + 1)]
+    #         self.tracking[filename][blockid] = [(ip, port)]
+    #     else:
+    #         self.tracking[filename][]
+
+
+    @staticmethod
+    def count(ls):
+        ''' val, cnt'''
+        d = {}
+        for item in ls:
+            if d.get(item):
+                d[item] += 1
+            else:
+                d[item] = 1
+        keys = list(d.keys())
+        vals = [d[key] for key in keys]
+        return keys, vals
+    @staticmethod
+    def uargmax(ls):
+        assert(len(ls) != 0)
+        maxval = -1
+        i = -1
+        for idx, item in enumerate(ls):
+            if item > maxval:
+                maxval = item
+                i = idx
+        return i
+
+        
+
+
+
+
 
 
 
