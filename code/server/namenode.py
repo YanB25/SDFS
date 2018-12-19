@@ -10,6 +10,7 @@ import os
 import math
 import random
 import pickle
+import pprint
 assert(len(sys.argv) == 2)
 PORT = int(sys.argv[1])
 
@@ -156,7 +157,8 @@ class NameNodeService(rpyc.Service):
                 return 2, []
         if len(ret_config) != len(self.tracking[filename]):
             return 3, []
-
+        pprint.pprint(self.tracking)
+        pprint.pprint(ret_config)
         return 0, ret_config
     def exposed_ownfile(self, filename):
         '''
