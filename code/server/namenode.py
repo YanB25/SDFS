@@ -207,7 +207,7 @@ class NameNodeService(rpyc.Service):
                     port = datanode['port']
                     try:
                         conn = rpyc.connect(ip, port)
-                        errno, binary = conn.root.get_block(filename, blockid)
+                        errno, binary = conn.root.get_block(filename, blockid, method='md5')
                         if not self.checking.get((filename, blockid)):
                             self.checking[(filename, blockid)] = [{
                                 'binary': binary,
@@ -231,7 +231,11 @@ class NameNodeService(rpyc.Service):
 
             val, cnt = NameNodeService.count(binary_list)
             idx = NameNodeService.uargmax(cnt)
-            correct_binary = binary_list[idx]
+            max_count = max(cnt)
+            if sum([1 if item == max_count else 0 for item in cnt]) >= 2:
+                correct_binary = b''
+            else:
+                correct_binary = binary_list[idx]
             for item in vals:
                 b = item['binary']
                 ip = item['ip']
