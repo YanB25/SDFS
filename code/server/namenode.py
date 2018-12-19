@@ -191,7 +191,13 @@ class NameNodeService(rpyc.Service):
         self.tracking = {key: self.tracking[key] for key in self.tracking if key != filename}
         self.__store_tracking()
         return 0
-    def exposed_fresh_update(self):
+    def exposed_fresh_update(self, limited_filename=''):
+        '''
+        向所有建立了连接的结点询问所有的存储块，比较确定哪些块是坏块。
+        @param limited_filename (Option) :: Str. 如果limited_filename是'',则更新所有的filename，否则，仅更新filename指定的文件
+        @ret Int, 错误码
+            - 0: no error
+        '''
         #TODO:
         self.__load_tracking()
 
@@ -200,6 +206,8 @@ class NameNodeService(rpyc.Service):
 
         datanodes = self.datanodes
         for filename in self.tracking:
+            if limited_filename != '' and filename != limited_filename:
+                continue
             for blockid in self.tracking[filename]:
                 datanodes = self.tracking[filename][blockid]
                 for datanode in datanodes:

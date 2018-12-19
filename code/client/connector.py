@@ -1,6 +1,7 @@
 import rpyc
 import os
 import traceback
+import pprint
 
 class Connector():
     def __init__(self, ip=None, port=None):
@@ -93,6 +94,7 @@ class Connector():
             return False, 'file {} exists. Abort.\nTry --force'.format(filename)
 
         namenode_conn = rpyc.connect(self.ip, self.port)
+        namenode_conn.root.fresh_update(limited_filename=filename)
         errno, datanodes = namenode_conn.root.get(filename)
         if errno == 1:
             return False, 'No file {} found'.format(filename)
@@ -148,6 +150,7 @@ class Connector():
         namenode_conn = rpyc.connect(self.ip, self.port)
         if all:
             error, msg = namenode_conn.root.fresh_update()
+            pprint.pprint(msg)
             if error == 0:
                 fmt = '\t{:<30}{:<10}{}/{}'
                 print(fmt.format('filename', 'block', 'valid', 'replica'))
