@@ -26,13 +26,13 @@ cat_parser = subparsers.add_parser('cat', help='concatenate files and print on t
 cat_parser.add_argument('file', type=str, help='file to be cancatenated or printed')
 cat_parser.set_defaults(which='cat')
 
-cp_parser = subparsers.add_parser('cp', 
-    help=' copy files and directories', 
-    parents=[src_dst_parent_parser, recursive_parent_parser])
-cp_parser.set_defaults(which='cp')
+# cp_parser = subparsers.add_parser('cp', 
+#     help=' copy files and directories', 
+#     parents=[src_dst_parent_parser, recursive_parent_parser])
+# cp_parser.set_defaults(which='cp')
 
-mv_parser = subparsers.add_parser('mv', help='move(rename) file', parents=[src_dst_parent_parser])
-mv_parser.set_defaults(which='mv')
+# mv_parser = subparsers.add_parser('mv', help='move(rename) file', parents=[src_dst_parent_parser])
+# mv_parser.set_defaults(which='mv')
 
 rm_parser = subparsers.add_parser('rm', help='remove files or directories',
     parents=[recursive_parent_parser])

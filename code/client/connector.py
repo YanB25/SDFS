@@ -150,7 +150,7 @@ class Connector():
         namenode_conn = rpyc.connect(self.ip, self.port)
         if all:
             error, msg = namenode_conn.root.fresh_update()
-            pprint.pprint(msg)
+            # pprint.pprint(msg)
             if error == 0:
                 fmt = '\t{:<30}{:<10}{}/{}'
                 print(fmt.format('filename', 'block', 'valid', 'replica'))
