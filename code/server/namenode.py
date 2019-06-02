@@ -180,7 +180,7 @@ class NameNodeService(rpyc.Service):
         for filename in self.tracking:        
             ret.append({
                 'filename': filename,
-                'replica': len(self.tracking[filename])
+                'block': len(self.tracking[filename])
             })
         return 0, ret
     def exposed_rm_register(self, filename):

@@ -41,13 +41,14 @@ class Dispatcher:
             if self.args.which == 'node':
                 success, msg = self.conn.node()
                 fmt = '\t{:<20}{:<10}{:<4}'
-                print(fmt.format('ip', 'port', 'status'))
-                for up_host in msg['up']:
-                    ip, port = up_host
-                    print(fmt.format(ip, port, 'UP'))
-                for up_host in msg['down']:
-                    ip, port = up_host
-                    print(fmt.format(ip, port, 'DOWN'))
+                print(msg)
+                # print(fmt.format('ip', 'port', 'status'))
+                # for up_host in msg['up']:
+                #     ip, port = up_host
+                #     print(fmt.format(ip, port, 'UP'))
+                # for up_host in msg['down']:
+                #     ip, port = up_host
+                #     print(fmt.format(ip, port, 'DOWN'))
             if self.args.which == 'cat':
                 success, msg = self.conn.cat(self.args.file)
                 print(msg)

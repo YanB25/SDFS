@@ -2,6 +2,7 @@ import rpyc
 import os
 import traceback
 import pprint
+import json
 
 class Connector():
     def __init__(self, ip=None, port=None):
@@ -37,7 +38,10 @@ class Connector():
             namenode_conn = rpyc.connect(self.ip, self.port)
             errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz, replica=replica)
             if errno == 1:
-                return False, 'Not enough DataNode for replica'
+                return False, {
+                    'code': 1,
+                    'msg': 'Not enough DataNode for replica'
+                }
 
             # 告知namenode，并对datanode作IO
             for idx, segment in enumerate(datanodes):
@@ -53,7 +57,10 @@ class Connector():
                     errno, msg = conn.root.put_block(filename, idx, write_binary)
                     if errno == 1:
                         print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
-        return True, 'success'
+        return True, {
+            'code': 0,
+            'msg': 'success'
+        }
     def cat(self, filename):
         '''
         根据文件名获得文件块
@@ -78,10 +85,18 @@ class Connector():
             file += binary
         try:
             output = file.decode('ascii')
-            print(output)
+            # print(output)
+            return True, {
+                'code': 0,
+                'data': output
+            }
         except:
-            print(file)
-        return True, 'success'
+            # print(file)
+            return False, {
+                'code': 1,
+                'msg': 'failed to cat file {}'.format(filename)
+            }
+        # return True, 'success'
 
     def get(self, filename, dst_filename=None, force=False):
         '''
@@ -91,17 +106,29 @@ class Connector():
         if dst_filename is None:
             dst_filename = filename
         if os.path.exists(dst_filename) and not force:
-            return False, 'file {} exists. Abort.\nTry --force'.format(filename)
+            return False, {
+                'code': 5,
+                'msg': 'file {} exists. Abort.\nTry --force'.format(filename)
+            }
 
         namenode_conn = rpyc.connect(self.ip, self.port)
         namenode_conn.root.fresh_update(limited_filename=filename)
         errno, datanodes = namenode_conn.root.get(filename)
         if errno == 1:
-            return False, 'No file {} found'.format(filename)
+            return True, {
+                'code': 1,
+                'msg': 'No file {} found'.format(filename)
+            }
         if errno == 2:
-            return False, 'Could not find enough healthy replica.\nuse python sdfs.py rm {} to remove this file'.format(filename)
+            return False, {
+                'code': 2,
+                'msg': 'Could not find enough healthy replica.\nuse python sdfs.py rm {} to remove this file'.format(filename)
+            }
         if errno == 3:
-            return False, 'Not enough good replica left. \nuse python sdfs.py rm {} to remove this file'.format(filename)
+            return False, {
+                'code': 3,
+                'msg': 'Not enough good replica left. \nuse python sdfs.py rm {} to remove this file'.format(filename)
+            }
         
         file = b''
         for blockid, datanode in enumerate(datanodes):
@@ -109,11 +136,17 @@ class Connector():
             conn = rpyc.connect(ip, port)
             errno, binary = conn.root.get_block(filename, blockid)
             if errno == 1:
-                return False, 'Unknown error when getting file {}, block not exists. Abort'.format(filename)
+                return False, {
+                    'code': 4,
+                    'msg': 'Unknown error when getting file {}, block not exists. Abort'.format(filename)
+                }
             file += binary
         with open(dst_filename, 'wb') as f:
             f.write(file)
-        return True, 'success'
+        return True, {
+            'code': 0,
+            'msg': 'success'
+        }
     def rm(self, filename):
         '''
         根据文件名删除文件
@@ -123,7 +156,10 @@ class Connector():
         namenode_conn = rpyc.connect(self.ip, self.port)
         errno, config_file = namenode_conn.root.ownfile(filename)
         if errno == 1:
-            return False, 'No file {} found'.format(filename)
+            return False, {
+                'code': 1,
+                'msg': 'No file {} found'.format(filename)
+            }
         # print(config_file)
         for blockid in config_file:
             datanodes = config_file[blockid]
@@ -140,8 +176,15 @@ class Connector():
                     traceback.print_exc()
         errno = namenode_conn.root.rm_register(filename)
         if errno == 1:
-            print('WARNING: {} not found'.format(filename))
-        return True, 'success'
+            # print('WARNING: {} not found'.format(filename))
+            return False, {
+                'code': 2,
+                'msg': 'WARNING: {} not found'.format(filename)
+            }
+        return True, {
+            'code': 0,
+            'msg': 'success'
+        }
     
     def ls(self, all=False):
         '''
@@ -153,7 +196,8 @@ class Connector():
             # pprint.pprint(msg)
             if error == 0:
                 fmt = '\t{:<30}{:<10}{}/{}'
-                print(fmt.format('filename', 'block', 'valid', 'replica'))
+                ret = []
+                # print(fmt.format('filename', 'block', 'valid', 'replica'))
                 for filename in msg:
                     sums = 0
                     valid = 0
@@ -161,20 +205,40 @@ class Connector():
                         replica_list = msg[filename][blkid]
                         valid += sum([1 if item['healthy'] else 0 for item in replica_list])
                         sums += len(replica_list)
-                    print(fmt.format(filename, len(msg[filename]), valid, sums))
+                    # print(fmt.format(filename, len(msg[filename]), valid, sums))
+                    ret.append({
+                        'filename': filename,
+                        'block': len(msg[filename]),
+                        'valid': valid,
+                        'sums': sums
+                    })
                 print('run python sdfs.py autofix to fix the error replica if valid != replica')
-                return True, 'success'
+                # return True, 'success'
+                return True, {
+                    'code': 0,
+                    'data': ret
+                }
             else:
-                return False, 'error'
+                return False, {
+                    'code': error,
+                    'msg': msg
+                }
         else:
             errno, config = namenode_conn.root.ls()
             if errno == 1:
-                return False, 'error'
+                return False, {
+                    'code': errno,
+                    'msg': 'err when ls'
+                }
             fmt='\t{:<30}{:<10}'
-            print(fmt.format('filename', 'block'))
-            for file_info in config:
-                print(fmt.format(file_info['filename'], file_info['replica']))
-            return True, 'success'
+            # print(fmt.format('filename', 'block'))
+            # for file_info in config:
+            #     print(fmt.format(file_info['filename'], file_info['replica']))
+            # return True, 'success'
+            return True, {
+                'code': 0,
+                'data': config
+            }
     def node(self):
         namenode_conn = rpyc.connect(self.ip, self.port)
         return namenode_conn.root.ping_all()
