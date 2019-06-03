@@ -4,6 +4,8 @@ import traceback
 import pprint
 import json
 
+from werkzeug import secure_filename
+
 class Connector():
     def __init__(self, ip=None, port=None):
         '''
@@ -16,6 +18,35 @@ class Connector():
             assert(ip is not None and port is not None)
             self.ip = ip
             self.port = port
+    def do_put(self, filename, binary, blk_sz=16384, replica=3):
+        size = len(binary)
+        namenode_conn = rpyc.connect(self.ip, self.port)
+        errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz, replica=replica)
+        if errno == 1:
+            return False, {
+                'code': 1,
+                'msg': 'Not enough DataNode for replica'
+            }
+
+        # 告知namenode，并对datanode作IO
+        for idx, segment in enumerate(datanodes):
+            if (idx + 1) * blk_sz <= size:
+                write_binary = binary[idx * blk_sz: (idx + 1) * blk_sz]
+            else:
+                write_binary = binary[idx * blk_sz :]
+            for datanode in segment:
+                ip, port = datanode
+                conn = rpyc.connect(ip, port)
+                # 将该块传给datanode
+                namenode_conn.root.put_block_registry(filename, idx, datanode)
+                errno, msg = conn.root.put_block(filename, idx, write_binary)
+                if errno == 1:
+                    print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
+        return True, {
+            'code': 0,
+            'msg': 'success'
+        }
+
     def put(self, filename, blk_sz=16384, replica=3):
         '''
         将文件上传到DataNode。
@@ -35,32 +66,7 @@ class Connector():
         with open(filename, 'rb') as f:
             binary = f.read()
             size = len(binary)
-            namenode_conn = rpyc.connect(self.ip, self.port)
-            errno, datanodes = namenode_conn.root.put(filename, size, blocksize=blk_sz, replica=replica)
-            if errno == 1:
-                return False, {
-                    'code': 1,
-                    'msg': 'Not enough DataNode for replica'
-                }
-
-            # 告知namenode，并对datanode作IO
-            for idx, segment in enumerate(datanodes):
-                if (idx + 1) * blk_sz <= size:
-                    write_binary = binary[idx * blk_sz: (idx + 1) * blk_sz]
-                else:
-                    write_binary = binary[idx * blk_sz :]
-                for datanode in segment:
-                    ip, port = datanode
-                    conn = rpyc.connect(ip, port)
-                    # 将该块传给datanode
-                    namenode_conn.root.put_block_registry(filename, idx, datanode)
-                    errno, msg = conn.root.put_block(filename, idx, write_binary)
-                    if errno == 1:
-                        print('Warning: {}-{} alread exists {} block {}'.format(ip, port, filename, idx))
-        return True, {
-            'code': 0,
-            'msg': 'success'
-        }
+            return self.do_put(secure_filename(filename), binary, blk_sz, replica)
     def cat(self, filename):
         '''
         根据文件名获得文件块
