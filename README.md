@@ -1,28 +1,23 @@
 # Simple Distributed FileSystem
+[click here](https://github.com/YanB25/SDFS/blob/master/report/16337269_%E9%A2%9C%E5%BD%AC.pdf) for the report of this project.
 ## requirement
 - tmux installed
 - Python >= 3.5
 - rpyc (python package) installed
-## Server
-### set up default server
+## How to run
+### Server
 ``` shell
 $ cd /code/server
+# run `name node` and `data node` via tmux.
 $ bash run.sh
 ```
-### manually set up server
+### Registry
 ``` shell
-# registry can work when all
-# server in the same network
 $ python rpyc_registry.py 
 ```
-``` shell
-$ python namenode.py # set up name node
-```
-``` shell
-$ python datanode.py # setup data node
-```
-## Client
+### Client
 ``` shell
 $ cd code/client
 $ python sdfs.py -h
 ```
+See the help for how to use the it.
