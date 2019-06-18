@@ -1,6 +1,7 @@
 # Simple Distributed FileSystem
 ## requirement
 - tmux installed
+- Python >= 3.5
 - rpyc (python package) installed
 ## Server
 ### set up default server
